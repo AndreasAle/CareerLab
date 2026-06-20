@@ -4,6 +4,7 @@ namespace App\Services\AI;
 
 use App\Models\CvReview;
 use App\Models\CvUpload;
+use App\Models\User;
 
 class CvReviewService
 {
@@ -13,22 +14,31 @@ class CvReviewService
     ) {
     }
 
-    public function review(CvUpload $cv, string $targetPosition): CvReview
+    /**
+     * Run the AI analysis and return the raw data array (no DB write).
+     * Reusable by both logged-in users and the public free trial.
+     *
+     * @return array<string,mixed>
+     */
+    public function analyzeText(string $cvText, string $targetPosition, ?User $user = null): array
     {
-        $cvText = $this->safeText($cv->extracted_text);
-
         $rendered = $this->prompts->render('cv_review', [
             'target_position' => $targetPosition,
-            'cv_text' => $cvText,
+            'cv_text' => $this->safeText($cvText),
         ], $this->fallbackPrompt());
 
-        $data = $this->ai->chatJson(
+        return $this->ai->chatJson(
             featureKey: 'cv_review',
             systemPrompt: $rendered['system'],
             userPrompt: $rendered['user'],
-            user: $cv->user,
+            user: $user,
             mockFallback: fn () => $this->mock($targetPosition),
         );
+    }
+
+    public function review(CvUpload $cv, string $targetPosition): CvReview
+    {
+        $data = $this->analyzeText((string) $cv->extracted_text, $targetPosition, $cv->user);
 
         return CvReview::create([
             'user_id' => $cv->user_id,

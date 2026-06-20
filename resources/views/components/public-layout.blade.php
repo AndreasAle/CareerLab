@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title }} — Latihan Masuk Kerja Sebelum Ketemu HRD</title>
     <meta name="description" content="CareerLab AI: upload CV, lihat cara HRD membaca profilmu, latihan interview, deteksi red flag, dan siapkan lamaran kerja dengan 10 fitur AI.">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -33,7 +34,7 @@
                     <a href="{{ route('dashboard') }}" class="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:scale-[1.03]">Dashboard</a>
                 @else
                     <a href="{{ route('login') }}" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Masuk</a>
-                    <a href="{{ route('register') }}" class="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:scale-[1.03]">Cek CV Gratis</a>
+                    <a href="{{ route('free.cv') }}" class="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:scale-[1.03]">Cek CV Gratis</a>
                 @endauth
             </div>
 
@@ -93,7 +94,7 @@
             <div class="md:col-span-3">
                 <h4 class="mb-3 text-sm font-semibold text-slate-900">Mulai sekarang</h4>
                 <p class="mb-3 text-sm text-slate-500">Gratis, tanpa kartu kredit.</p>
-                <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
+                <a href="{{ route('free.cv') }}" class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
                     Cek CV Gratis <x-icon name="arrow" class="h-4 w-4"/>
                 </a>
             </div>

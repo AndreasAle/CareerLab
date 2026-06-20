@@ -14,9 +14,18 @@ class PdfTextExtractor
      */
     public function fromStoredPath(string $path, string $disk = 'local'): ?string
     {
-        try {
-            $fullPath = Storage::disk($disk)->path($path);
+        $fullPath = Storage::disk($disk)->path($path);
 
+        return $this->fromAbsolutePath($fullPath);
+    }
+
+    /**
+     * Extract plain text from any absolute filesystem path (e.g. an uploaded temp file).
+     * Returns null on failure so callers can fall back to manual text input.
+     */
+    public function fromAbsolutePath(string $fullPath): ?string
+    {
+        try {
             if (! is_file($fullPath)) {
                 return null;
             }

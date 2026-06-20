@@ -23,10 +23,10 @@
                 </p>
 
                 {{-- search-style CTA --}}
-                <form action="{{ route('register') }}" method="GET" class="mt-8 flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-200/60 sm:flex-row sm:items-center">
+                <form action="{{ route('free.cv') }}" method="GET" class="mt-8 flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-200/60 sm:flex-row sm:items-center">
                     <div class="flex flex-1 items-center gap-2 px-3">
                         <x-icon name="target" class="h-5 w-5 text-slate-400"/>
-                        <input type="text" name="role" placeholder="Posisi yang kamu incar (cth: Backend Developer)" class="w-full border-0 py-2.5 text-sm placeholder:text-slate-400 focus:ring-0">
+                        <input type="text" name="position" placeholder="Posisi yang kamu incar (cth: Backend Developer)" class="w-full border-0 py-2.5 text-sm placeholder:text-slate-400 focus:ring-0">
                     </div>
                     <button class="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:scale-[1.02]">
                         <x-icon name="spark" class="h-4 w-4"/> Cek CV Gratis
@@ -34,10 +34,10 @@
                 </form>
 
                 <div class="mt-5">
-                    <p class="text-xs font-medium text-slate-400">Mulai dari fitur populer:</p>
+                    <p class="text-xs font-medium text-slate-400">Langsung coba, tanpa daftar:</p>
                     <div class="mt-2 flex flex-wrap gap-2">
                         @foreach (['CV Review','Interview','Job Match','Red Flag','Salary Nego'] as $chip)
-                            <a href="{{ route('register') }}" class="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600">{{ $chip }}</a>
+                            <a href="{{ route('free.cv') }}" class="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600">{{ $chip }}</a>
                         @endforeach
                     </div>
                 </div>
@@ -290,7 +290,7 @@
             <div class="relative">
                 <h2 class="text-3xl font-bold sm:text-4xl">Siap bikin HRD nangkep value kamu?</h2>
                 <p class="mx-auto mt-3 max-w-md text-white/80">Mulai gratis hari ini. Tanpa kartu kredit, langsung bisa cek CV.</p>
-                <a href="{{ route('register') }}" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-semibold text-slate-900 shadow-xl transition hover:scale-[1.03]">
+                <a href="{{ route('free.cv') }}" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-semibold text-slate-900 shadow-xl transition hover:scale-[1.03]">
                     <x-icon name="spark" class="h-4 w-4 text-indigo-600"/> Cek CV Gratis Sekarang
                 </a>
             </div>

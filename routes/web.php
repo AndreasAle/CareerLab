@@ -40,6 +40,13 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [LandingController::class, 'index'])->name('home');
 Route::get('/pricing', [LandingController::class, 'pricing'])->name('pricing');
+
+// Public free CV check (no login) — HelloPDF-style instant trial + AI chat.
+Route::get('/cek-cv', [\App\Http\Controllers\FreeTrialController::class, 'index'])->name('free.cv');
+Route::post('/cek-cv', [\App\Http\Controllers\FreeTrialController::class, 'analyze'])
+    ->middleware('throttle:10,1')->name('free.cv.analyze');
+Route::post('/cek-cv/chat', [\App\Http\Controllers\FreeTrialController::class, 'chat'])
+    ->middleware('throttle:20,1')->name('free.cv.chat');
 Route::get('/blog', [LandingController::class, 'blogIndex'])->name('blog.index');
 Route::get('/blog/{post:slug}', [LandingController::class, 'blogShow'])->name('blog.show');
 
