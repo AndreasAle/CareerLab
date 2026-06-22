@@ -52,8 +52,9 @@ return [
     // or set AI_AVATAR_VIDEO to a looping/real talking-head MP4 (e.g. D-ID/HeyGen export)
     // for true lifelike lip-sync.
     'ai_avatar' => [
-        'photo' => env('AI_AVATAR_PHOTO'),
-        'video' => env('AI_AVATAR_VIDEO'),
+        'model' => env('AI_AVATAR_MODEL'), // Ready Player Me .glb (3D talking avatar)
+        'photo' => env('AI_AVATAR_PHOTO'), // fallback poster if 3D fails
+        'video' => env('AI_AVATAR_VIDEO'), // optional looping real-person mp4
     ],
 
 ];

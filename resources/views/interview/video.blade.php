@@ -29,47 +29,48 @@
                 <div class="rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur" x-text="mode + ' · ' + position"></div>
             </div>
 
-            {{-- ===== AI interviewer video tile (realistic human) ===== --}}
+            {{-- ===== AI interviewer video tile (3D human avatar) ===== --}}
             @php
-                // Realistic human portrait (free CDN). Swap to your own asset or a D-ID/HeyGen
-                // talking-head stream URL for true lip-sync (see AVATAR_VIDEO_URL note).
+                // Free 3D human (Ready Player Me). Create your own at readyplayer.me and set
+                // AI_AVATAR_MODEL to its .glb URL. Must include ARKit + Oculus viseme morph targets.
+                $avatarModel = config('services.ai_avatar.model')
+                    ?: 'https://models.readyplayer.me/64bfa15f0e72c63d7c3934a6.glb?morphTargets=ARKit,Oculus%20Visemes&textureAtlas=1024';
                 $avatarPhoto = config('services.ai_avatar.photo') ?: 'https://randomuser.me/api/portraits/women/79.jpg';
-                $avatarVideo = config('services.ai_avatar.video'); // optional looping mp4 of a real person
+                $expression = in_array($session->hrd_mode, ['galak_mode','strict']) ? 'serious' : 'friendly';
             @endphp
             <div class="relative flex flex-col items-center px-4 pb-5 pt-1">
                 <div class="relative w-full max-w-md">
                     <span class="cl-pulse absolute -inset-1 -z-10 rounded-3xl bg-emerald-400/30"></span>
                     <div class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10 transition"
                          :class="speaking ? 'ring-2 ring-emerald-400/80' : 'ring-white/10'">
-                        @if ($avatarVideo)
-                            {{-- looping real-person video (idle), most lifelike --}}
-                            <video src="{{ $avatarVideo }}" autoplay loop muted playsinline class="h-full w-full object-cover" :class="speaking ? 'cl-alive' : ''"></video>
-                        @else
-                            <img src="{{ $avatarPhoto }}" alt="Clara - AI HRD" referrerpolicy="no-referrer"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                                 class="h-full w-full object-cover" :class="speaking ? 'cl-alive' : ''">
-                            <div style="display:none" class="absolute inset-0 items-center justify-center bg-gradient-to-br from-indigo-500 to-violet-600 text-7xl font-bold text-white">C</div>
-                        @endif
-
-                        {{-- legibility gradient --}}
-                        <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent"></div>
+                        {{-- fallback poster (shown until/if 3D fails) --}}
+                        <img src="{{ $avatarPhoto }}" alt="Clara - AI HRD" referrerpolicy="no-referrer"
+                             class="absolute inset-0 h-full w-full object-cover" :class="speaking ? 'cl-alive' : ''">
+                        {{-- 3D avatar canvas mounts here --}}
+                        <div id="clara3d" class="absolute inset-0 z-[1] bg-gradient-to-br from-slate-800 to-indigo-950"
+                             data-model="{{ $avatarModel }}" data-expression="{{ $expression }}"></div>
+                        {{-- loading hint --}}
+                        <div id="clara3dLoading" class="absolute inset-0 z-[2] flex flex-col items-center justify-center bg-slate-900/70 text-white">
+                            <svg class="h-7 w-7 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"/><path d="M12 2a10 10 0 0110 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                            <span class="mt-2 text-xs text-white/70">Memuat avatar 3D Clara...</span>
+                        </div>
 
                         {{-- status pill (top-left) --}}
-                        <div class="absolute left-3 top-3 rounded-full bg-black/55 px-3 py-1 text-[11px] font-medium text-white backdrop-blur">
+                        <div class="absolute left-3 top-3 z-[4] rounded-full bg-black/55 px-3 py-1 text-[11px] font-medium text-white backdrop-blur">
                             <span x-show="speaking">🔊 Sedang bicara</span>
                             <span x-show="!speaking && loading" x-cloak>💭 Mendengarkan jawabanmu...</span>
                             <span x-show="!speaking && !loading" x-cloak>🎙️ Giliran kamu</span>
                         </div>
 
                         {{-- speaking equalizer (top-right) --}}
-                        <div x-show="speaking" x-cloak class="absolute right-3 top-3 flex h-5 items-end gap-0.5">
+                        <div x-show="speaking" x-cloak class="absolute right-3 top-3 z-[4] flex h-5 items-end gap-0.5">
                             @for ($i = 0; $i < 5; $i++)
                                 <span class="cl-soundbar w-1 rounded-full bg-emerald-400" style="animation-delay: {{ $i * 0.12 }}s"></span>
                             @endfor
                         </div>
 
                         {{-- name tag (bottom-left, Zoom style) --}}
-                        <div class="absolute bottom-3 left-3 flex items-center gap-2 rounded-lg bg-black/55 px-3 py-1.5 backdrop-blur">
+                        <div class="absolute bottom-3 left-3 z-[4] flex items-center gap-2 rounded-lg bg-black/55 px-3 py-1.5 backdrop-blur">
                             <span class="flex h-3.5 items-end gap-0.5">
                                 <span class="w-0.5 rounded-full bg-emerald-400" style="height:40%"></span>
                                 <span class="w-0.5 rounded-full bg-emerald-400" style="height:70%"></span>
@@ -191,9 +192,10 @@
                     const u = new SpeechSynthesisUtterance(text.replace(/[*_#]/g,''));
                     const v = this.pickVoice(); if (v) u.voice = v;
                     u.lang = 'id-ID'; u.rate = 1; u.pitch = 1.05;
-                    u.onstart = () => this.speaking = true;
-                    u.onend = () => this.speaking = false;
-                    u.onerror = () => this.speaking = false;
+                    u.onstart = () => { this.speaking = true; window.ClaraAvatar?.setSpeaking(true); };
+                    u.onend = () => { this.speaking = false; window.ClaraAvatar?.setSpeaking(false); };
+                    u.onerror = () => { this.speaking = false; window.ClaraAvatar?.setSpeaking(false); };
+                    u.onboundary = () => window.ClaraAvatar?.pulse();
                     window.speechSynthesis.speak(u);
                 },
                 replay() { this.speak(this.aiText); },
@@ -259,6 +261,114 @@
                     } catch (e) { this.aiText = 'Koneksi bermasalah. Coba lagi sebentar ya.'; }
                     finally { this.loading = false; }
                 },
+            };
+        }
+    </script>
+
+    {{-- ===== 3D talking avatar (Three.js + Ready Player Me) ===== --}}
+    <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        const mount = document.getElementById('clara3d');
+        const loadingEl = document.getElementById('clara3dLoading');
+        if (mount) {
+            const modelUrl = mount.dataset.model;
+            const expression = mount.dataset.expression || 'friendly';
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            mount.appendChild(renderer.domElement);
+
+            function resize() {
+                const w = mount.clientWidth, h = mount.clientHeight;
+                renderer.setSize(w, h, false);
+                camera.aspect = w / h; camera.updateProjectionMatrix();
+            }
+
+            // lighting (soft studio)
+            scene.add(new THREE.HemisphereLight(0xffffff, 0x9090b0, 2.0));
+            const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(1, 2, 2); scene.add(key);
+            const rim = new THREE.DirectionalLight(0x8b9cff, 1.0); rim.position.set(-2, 1, -1); scene.add(rim);
+
+            let head = null, morphTargets = [], blinkT = 0, nextBlink = 2, talkAmt = 0, targetTalk = 0, smile = 0, clock = new THREE.Clock();
+            const state = { speaking: false };
+
+            // morph helpers (RPM uses ARKit + Oculus viseme names)
+            const setMorph = (names, value) => {
+                morphTargets.forEach(({ mesh, dict }) => {
+                    names.forEach(n => { if (dict[n] !== undefined) mesh.morphTargetInfluences[dict[n]] = value; });
+                });
+            };
+
+            const loader = new GLTFLoader();
+            loader.load(modelUrl, (gltf) => {
+                const avatar = gltf.scene;
+                avatar.traverse((o) => {
+                    if (o.isMesh && o.morphTargetDictionary) {
+                        morphTargets.push({ mesh: o, dict: o.morphTargetDictionary });
+                        o.frustumCulled = false;
+                    }
+                    if (o.isMesh && /head/i.test(o.name)) head = o;
+                });
+                scene.add(avatar);
+
+                // frame head & shoulders
+                avatar.position.y = -1.45;
+                camera.position.set(0, 0.05, 0.95);
+                camera.lookAt(0, 0.02, 0);
+                smile = expression === 'friendly' ? 0.35 : 0.0;
+
+                resize();
+                loadingEl && loadingEl.remove();
+                animate();
+            }, undefined, (err) => {
+                // 3D failed -> keep the realistic photo poster
+                console.warn('Avatar 3D gagal dimuat, pakai foto.', err);
+                mount.style.display = 'none';
+                loadingEl && loadingEl.remove();
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+                const dt = clock.getDelta();
+                const t = clock.elapsedTime;
+
+                // blink
+                blinkT += dt;
+                let blink = 0;
+                if (blinkT > nextBlink) {
+                    const p = (blinkT - nextBlink) / 0.13;
+                    blink = p < 1 ? Math.sin(p * Math.PI) : (blinkT = 0, nextBlink = 2 + Math.random() * 4, 0);
+                }
+                setMorph(['eyeBlinkLeft', 'eyeBlinkRight', 'eyesClosed'], blink);
+
+                // lip-sync: oscillate jaw/mouth while speaking
+                targetTalk = state.speaking ? (0.25 + Math.abs(Math.sin(t * 11)) * 0.45 + Math.random() * 0.1) : 0;
+                talkAmt += (targetTalk - talkAmt) * Math.min(1, dt * 18);
+                setMorph(['jawOpen', 'mouthOpen', 'viseme_aa'], talkAmt);
+                setMorph(['mouthSmileLeft', 'mouthSmileRight', 'mouthSmile'], smile + (state.speaking ? 0.05 : 0));
+
+                // subtle idle head motion
+                if (head) { head.rotation.y = Math.sin(t * 0.6) * 0.05; head.rotation.x = Math.sin(t * 0.45) * 0.025; }
+
+                renderer.render(scene, camera);
+            }
+
+            window.addEventListener('resize', resize);
+            window.ClaraAvatar = {
+                setSpeaking: (b) => { state.speaking = b; },
+                pulse: () => { targetTalk = 0.7; },
+                setExpression: (e) => { smile = e === 'friendly' ? 0.35 : 0; },
             };
         }
     </script>
