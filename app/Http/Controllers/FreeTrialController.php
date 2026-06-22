@@ -13,7 +13,6 @@ class FreeTrialController extends Controller
 {
     public function index(Request $request, GuestTrialService $guest)
     {
-        // Logged-in users get the real thing.
         if ($request->user()) {
             return redirect()->route('cv.index');
         }
@@ -22,6 +21,9 @@ class FreeTrialController extends Controller
             'review' => session('guest_review'),
             'position' => session('guest_position'),
             'canCheck' => $guest->canCheckCv(),
+            'checksLeft' => $guest->checksRemaining(),
+            'maxChecks' => GuestTrialService::FREE_CV_CHECKS,
+            'resetAt' => $guest->cvResetAt(),
             'chatHistory' => session('guest_chat', []),
             'tokensLeft' => $guest->chatTokensRemaining(),
             'maxTokens' => GuestTrialService::FREE_CHAT_TOKENS,
@@ -36,7 +38,7 @@ class FreeTrialController extends Controller
 
         if (! $guest->canCheckCv()) {
             return redirect()->route('pricing')
-                ->with('upgrade', 'Kamu sudah pakai jatah cek CV gratis. Daftar / upgrade untuk analisis tanpa batas di dashboard.');
+                ->with('upgrade', 'Free trial habis (' . GuestTrialService::FREE_CV_CHECKS . '/' . GuestTrialService::FREE_CV_CHECKS . '). Daftar / upgrade untuk cek CV tanpa batas di dashboard.');
         }
 
         $request->validate([
@@ -66,13 +68,31 @@ class FreeTrialController extends Controller
         $data = $service->analyzeText($text, $request->target_position);
         $guest->recordCvCheck();
 
-        // Seed the chat with a friendly, solution-oriented opener.
+        // Free = teaser. Keep the accurate core, trim depth, lock the rest behind sign-up.
+        $free = [
+            'overall_score' => (int) ($data['overall_score'] ?? 0),
+            'ats_score' => (int) ($data['ats_score'] ?? 0),
+            'call_probability' => $data['call_probability'] ?? 'medium',
+            'hrd_first_impression' => $data['hrd_first_impression'] ?? null,
+            'strengths' => array_slice($data['strengths'] ?? [], 0, 3),
+            'weaknesses' => array_slice($data['weaknesses'] ?? [], 0, 3),
+            'red_flags' => array_slice($data['red_flags'] ?? [], 0, 1),
+            // counts of what's hidden, to entice sign-up
+            'locked' => [
+                'weaknesses' => max(0, count($data['weaknesses'] ?? []) - 3),
+                'red_flags' => max(0, count($data['red_flags'] ?? []) - 1),
+                'missing_keywords' => count($data['missing_keywords'] ?? []),
+                'improvements' => count($data['improvement_suggestions'] ?? []),
+                'has_rewritten_summary' => ! empty($data['rewritten_summary']),
+            ],
+        ];
+
         $opener = 'Hai! Aku Clara, career coach AI kamu. Aku udah baca CV kamu untuk posisi '
-            . $request->target_position . '. Ada yang mau kamu tanyain? Misal: "Gimana cara perbaiki summary aku?" '
+            . $request->target_position . '. Mau tanya apa? (mis. "Perbaiki summary aku"). '
             . 'Kamu punya ' . GuestTrialService::FREE_CHAT_TOKENS . ' pesan gratis.';
 
         session([
-            'guest_review' => $data,
+            'guest_review' => $free,
             'guest_position' => $request->target_position,
             'guest_cv_text' => mb_substr($text, 0, 4000),
             'guest_chat' => [['role' => 'assistant', 'content' => $opener]],
@@ -91,22 +111,20 @@ class FreeTrialController extends Controller
             return response()->json(['error' => 'no_review', 'message' => 'Cek CV kamu dulu ya.'], 422);
         }
 
-        $validated = $request->validate([
-            'message' => ['required', 'string', 'max:1000'],
-        ]);
+        $validated = $request->validate(['message' => ['required', 'string', 'max:1000']]);
 
         if (! $guest->canChat()) {
             return response()->json([
                 'error' => 'no_tokens',
-                'message' => 'Token chat gratis kamu habis. Daftar untuk lanjut ngobrol & buka semua fitur.',
+                'message' => 'Free trial habis. Daftar untuk ngobrol tanpa batas & buka semua fitur.',
                 'url' => route('pricing'),
             ], 402);
         }
 
         $history = session('guest_chat', []);
-        $reply = $chat->reply($validated['message'], session('guest_cv_text', ''), $history);
+        // brief = true -> minimised free responses
+        $reply = $chat->reply($validated['message'], session('guest_cv_text', ''), $history, brief: true);
 
-        // 1 message = 1 token.
         $guest->recordChatToken();
 
         $history[] = ['role' => 'user', 'content' => $validated['message']];

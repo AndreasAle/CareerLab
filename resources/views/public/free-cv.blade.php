@@ -7,10 +7,18 @@
         </div>
         <div class="mx-auto max-w-3xl px-4 pt-14 pb-6 text-center lg:px-8">
             <span class="reveal inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50/70 px-4 py-1.5 text-xs font-semibold text-indigo-700">
-                <x-icon name="spark" class="h-3.5 w-3.5"/> Gratis · Tanpa daftar
+                <x-icon name="spark" class="h-3.5 w-3.5"/> Gratis · Tanpa daftar · {{ $maxChecks }}× cek per bulan
             </span>
             <h1 class="reveal mt-5 text-4xl font-extrabold tracking-tight sm:text-5xl">Cek CV kamu sekarang</h1>
             <p class="reveal mt-4 text-lg text-slate-500">Upload CV, lihat cara HRD membacanya dalam hitungan detik. Lalu tanya langsung ke <span class="font-semibold text-indigo-600">Clara</span>, career coach AI kita.</p>
+
+            @if ($canCheck)
+                <div class="reveal mt-5 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm shadow-sm ring-1 ring-slate-200">
+                    <x-icon name="bolt" class="h-4 w-4 text-emerald-500"/>
+                    <span class="font-semibold text-slate-800">{{ $checksLeft }}/{{ $maxChecks }}</span>
+                    <span class="text-slate-500">cek gratis tersisa</span>
+                </div>
+            @endif
         </div>
     </section>
 
@@ -22,8 +30,26 @@
     @endif
 
     <section class="mx-auto max-w-5xl px-4 pb-20 lg:px-8">
-        @if (! $review && $canCheck)
-            {{-- ===== UPLOAD FORM ===== --}}
+        {{-- ===== LOCKED banner when quota exhausted ===== --}}
+        @if (! $canCheck)
+            <div class="reveal mx-auto mt-6 max-w-xl rounded-3xl border border-amber-200 bg-white p-10 text-center shadow-sm">
+                <div class="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-amber-50 text-amber-600"><x-icon name="lock" class="h-8 w-8"/></div>
+                <h2 class="text-xl font-bold text-slate-800">Free trial habis ({{ $maxChecks }}/{{ $maxChecks }})</h2>
+                <p class="mt-2 text-sm text-slate-500">Kamu sudah pakai semua jatah cek CV gratis dari IP ini. Daftar untuk lanjut review CV tanpa batas, latihan interview, dan buka 10 fitur AI di dashboard.</p>
+                @if ($resetAt)
+                    <p class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+                        <x-icon name="clock" class="h-3.5 w-3.5"/> Kuota gratis reset otomatis {{ $resetAt->isoFormat('D MMMM Y') }}
+                    </p>
+                @endif
+                <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                    <a href="{{ route('register') }}" class="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25">Daftar Gratis</a>
+                    <a href="{{ route('pricing') }}" class="rounded-xl border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Lihat Paket</a>
+                </div>
+            </div>
+        @endif
+
+        {{-- ===== UPLOAD FORM (while quota remains) ===== --}}
+        @if ($canCheck)
             <form method="POST" action="{{ route('free.cv.analyze') }}" enctype="multipart/form-data"
                   x-data="{ name:'', loading:false }" @submit="loading = true"
                   class="reveal mx-auto mt-6 max-w-2xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60">
@@ -55,20 +81,8 @@
                     <span x-show="!loading" class="flex items-center gap-2"><x-icon name="spark" class="h-4 w-4"/> Analisis CV Gratis</span>
                     <span x-show="loading" x-cloak class="flex items-center gap-2"><svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"/><path d="M12 2a10 10 0 0110 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg> HRD lagi baca CV kamu...</span>
                 </button>
-                <p class="mt-3 text-center text-xs text-slate-400"><x-icon name="shield" class="mr-1 inline h-3.5 w-3.5 text-emerald-500"/> Data CV kamu hanya dipakai untuk analisis ini. Gratis 1× cek.</p>
+                <p class="mt-3 text-center text-xs text-slate-400"><x-icon name="shield" class="mr-1 inline h-3.5 w-3.5 text-emerald-500"/> Data CV hanya untuk analisis ini · Sisa {{ $checksLeft }}/{{ $maxChecks }} cek gratis.</p>
             </form>
-
-        @elseif (! $review && ! $canCheck)
-            {{-- ===== LOCKED (free quota used) ===== --}}
-            <div class="reveal mx-auto mt-6 max-w-xl rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-                <div class="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-amber-50 text-amber-600"><x-icon name="lock" class="h-8 w-8"/></div>
-                <h2 class="text-xl font-bold text-slate-800">Jatah cek CV gratis sudah habis</h2>
-                <p class="mt-2 text-sm text-slate-500">Kamu sudah pakai 1× analisis gratis. Daftar untuk lanjut review CV tanpa batas, latihan interview, dan buka 10 fitur AI di dashboard.</p>
-                <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-                    <a href="{{ route('register') }}" class="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25">Daftar Gratis</a>
-                    <a href="{{ route('pricing') }}" class="rounded-xl border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Lihat Paket</a>
-                </div>
-            </div>
         @endif
 
         {{-- ===== RESULT + CHAT ===== --}}
@@ -79,9 +93,11 @@
                 $callProb = $review['call_probability'] ?? 'medium';
                 $callLabel = ['low'=>'Rendah','medium'=>'Sedang','high'=>'Tinggi'][$callProb] ?? 'Sedang';
                 $callColor = ['low'=>'bg-rose-100 text-rose-700','medium'=>'bg-amber-100 text-amber-700','high'=>'bg-emerald-100 text-emerald-700'][$callProb] ?? 'bg-amber-100 text-amber-700';
+                $locked = $review['locked'] ?? [];
+                $lockedTotal = ($locked['weaknesses'] ?? 0) + ($locked['missing_keywords'] ?? 0) + ($locked['improvements'] ?? 0) + (($locked['has_rewritten_summary'] ?? false) ? 1 : 0);
             @endphp
 
-            <div class="mt-6 grid gap-6 lg:grid-cols-5">
+            <div class="mt-10 grid gap-6 lg:grid-cols-5">
                 {{-- left: result --}}
                 <div class="space-y-6 lg:col-span-3">
                     <div class="reveal rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -129,17 +145,32 @@
                         </div>
                     @endif
 
-                    @if (!empty($review['rewritten_summary']))
-                        <div class="reveal rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 shadow-sm" style="--reveal-delay:160ms">
-                            <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold text-indigo-800"><x-icon name="spark" class="h-4 w-4"/> Contoh summary yang lebih kuat</h3>
-                            <p class="text-sm leading-relaxed text-indigo-900">{{ $review['rewritten_summary'] }}</p>
+                    {{-- LOCKED teaser → conversion --}}
+                    @if ($lockedTotal > 0)
+                        <div class="reveal relative overflow-hidden rounded-2xl border border-indigo-200 bg-white p-6 shadow-sm" style="--reveal-delay:160ms">
+                            <div class="pointer-events-none select-none blur-[3px]">
+                                <h3 class="mb-2 text-sm font-semibold text-slate-800">Analisis lengkap</h3>
+                                <ul class="space-y-1.5 text-sm text-slate-500">
+                                    <li>• Contoh summary CV siap pakai yang lebih kuat…</li>
+                                    <li>• Daftar keyword penting yang hilang dari CV-mu…</li>
+                                    <li>• Saran perbaikan langkah demi langkah…</li>
+                                </ul>
+                            </div>
+                            <div class="absolute inset-0 grid place-items-center bg-white/40">
+                                <div class="rounded-2xl border border-indigo-100 bg-white/95 p-5 text-center shadow-lg">
+                                    <div class="mx-auto mb-2 grid h-11 w-11 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><x-icon name="lock" class="h-6 w-6"/></div>
+                                    <p class="text-sm font-bold text-slate-800">+{{ $lockedTotal }} insight lagi menunggu</p>
+                                    <p class="mt-1 text-xs text-slate-500">Keyword hilang, saran perbaikan & contoh summary siap pakai.</p>
+                                    <a href="{{ route('register') }}" class="mt-3 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2 text-sm font-semibold text-white">Daftar Gratis untuk buka <x-icon name="arrow" class="h-4 w-4"/></a>
+                                </div>
+                            </div>
                         </div>
                     @endif
                 </div>
 
                 {{-- right: CHATBOT --}}
                 <div class="lg:col-span-2">
-                    <div class="reveal sticky top-20 flex h-[600px] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl"
+                    <div class="reveal sticky top-20 flex h-[560px] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl"
                          style="--reveal-delay:100ms"
                          x-data="claraChat({
                             history: @js($chatHistory),
@@ -149,7 +180,6 @@
                             pricing: '{{ route('pricing') }}',
                             register: '{{ route('register') }}'
                          })">
-                        {{-- header --}}
                         <div class="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-white">
                             <div class="flex items-center gap-2.5">
                                 <div class="relative grid h-9 w-9 place-items-center rounded-full bg-white/20">
@@ -161,7 +191,6 @@
                             <span class="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold" x-text="tokens + '/' + max + ' pesan'"></span>
                         </div>
 
-                        {{-- messages --}}
                         <div class="flex-1 space-y-3 overflow-y-auto p-4" x-ref="scroll">
                             <template x-for="(m, i) in messages" :key="i">
                                 <div :class="m.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
@@ -171,7 +200,6 @@
                                          x-text="m.content"></div>
                                 </div>
                             </template>
-                            {{-- typing --}}
                             <div x-show="loading" x-cloak class="flex justify-start">
                                 <div class="flex gap-1 rounded-2xl rounded-tl-sm bg-slate-100 px-4 py-3">
                                     <span class="h-2 w-2 animate-bounce rounded-full bg-slate-400" style="animation-delay:0ms"></span>
@@ -181,14 +209,12 @@
                             </div>
                         </div>
 
-                        {{-- upgrade overlay --}}
                         <div x-show="tokens <= 0" x-cloak class="border-t border-slate-100 bg-amber-50 p-4 text-center">
-                            <p class="text-sm font-medium text-amber-800">Token chat gratis habis 🙌</p>
+                            <p class="text-sm font-medium text-amber-800">Free trial habis 🙌</p>
                             <p class="mt-0.5 text-xs text-amber-700">Daftar untuk ngobrol tanpa batas + buka semua fitur.</p>
                             <a :href="register" class="mt-2 inline-block rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2 text-sm font-semibold text-white">Daftar Gratis</a>
                         </div>
 
-                        {{-- input --}}
                         <div x-show="tokens > 0" class="border-t border-slate-100 p-3">
                             <form @submit.prevent="send()" class="flex items-center gap-2">
                                 <input x-model="draft" :disabled="loading" type="text" placeholder="Tanya soal CV kamu..."
@@ -206,7 +232,6 @@
                         </div>
                     </div>
 
-                    {{-- upgrade nudge under chat --}}
                     <a href="{{ route('register') }}" class="reveal mt-4 flex items-center justify-between rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-950 px-5 py-4 text-white" style="--reveal-delay:160ms">
                         <div>
                             <p class="text-sm font-semibold">Mau analisis lengkap?</p>

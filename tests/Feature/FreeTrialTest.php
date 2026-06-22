@@ -34,12 +34,15 @@ class FreeTrialTest extends TestCase
         $this->get('/cek-cv')->assertOk()->assertSee('Hasil Analisis');
     }
 
-    public function test_second_free_check_is_blocked_and_redirected_to_pricing(): void
+    public function test_sixth_free_check_is_blocked_and_redirected_to_pricing(): void
     {
         $payload = ['target_position' => 'Dev', 'manual_text' => 'CV teks contoh yang cukup panjang untuk dianalisis.'];
 
-        $this->post('/cek-cv', $payload)->assertRedirect(route('free.cv'));
-        // Same IP -> second attempt blocked.
+        // 5 free checks allowed per IP.
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/cek-cv', $payload)->assertRedirect(route('free.cv'));
+        }
+        // 6th from the same IP is blocked.
         $this->post('/cek-cv', $payload)->assertRedirect(route('pricing'));
     }
 
@@ -60,8 +63,25 @@ class FreeTrialTest extends TestCase
         $res->assertOk()
             ->assertJsonStructure(['reply', 'tokensLeft']);
 
-        $this->assertSame(4, $res->json('tokensLeft'));
+        // 3 free chat tokens -> 2 left after the first message.
+        $this->assertSame(2, $res->json('tokensLeft'));
         $this->assertNotEmpty($res->json('reply'));
+    }
+
+    public function test_free_result_is_trimmed_and_locks_premium(): void
+    {
+        $this->post('/cek-cv', [
+            'target_position' => 'Backend Developer',
+            'manual_text' => 'Pengalaman Laravel, MySQL, REST API.',
+        ]);
+
+        $review = session('guest_review');
+        // Teaser: max 3 weaknesses, locked counts present.
+        $this->assertLessThanOrEqual(3, count($review['weaknesses'] ?? []));
+        $this->assertArrayHasKey('locked', $review);
+        // Premium fields are NOT exposed to guests.
+        $this->assertArrayNotHasKey('rewritten_summary', $review);
+        $this->assertArrayNotHasKey('missing_keywords', $review);
     }
 
     public function test_logged_in_user_is_redirected_to_real_cv_page(): void
