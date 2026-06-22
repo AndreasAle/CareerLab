@@ -42,10 +42,10 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        event(new Registered($user));
+        event(new Registered($user)); // sends the OTP code email (see User::sendEmailVerificationNotification)
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        return redirect(route('verification.notice'));
     }
 }

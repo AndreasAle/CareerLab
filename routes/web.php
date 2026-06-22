@@ -56,7 +56,7 @@ Route::get('/blog/{post:slug}', [LandingController::class, 'blogShow'])->name('b
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('verified')->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -68,7 +68,7 @@ Route::middleware(['auth'])->group(function () {
 | User area (role: user)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:user'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:user'])->group(function () {
     // CV upload + HRD Black Box review
     Route::get('/cv', [CvUploadController::class, 'index'])->name('cv.index');
     Route::post('/cv/upload', [CvUploadController::class, 'store'])->name('cv.upload');

@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Mail\VerificationCodeMail;
 use App\Models\User;
-use Illuminate\Auth\Events\Verified;
+use App\Services\EmailVerificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class EmailVerificationTest extends TestCase
@@ -15,43 +15,37 @@ class EmailVerificationTest extends TestCase
 
     public function test_email_verification_screen_can_be_rendered(): void
     {
+        Mail::fake();
         $user = User::factory()->unverified()->create();
 
-        $response = $this->actingAs($user)->get('/verify-email');
-
-        $response->assertStatus(200);
+        $this->actingAs($user)->get('/verify-email')->assertStatus(200);
     }
 
-    public function test_email_can_be_verified(): void
+    public function test_email_can_be_verified_with_otp_code(): void
     {
+        Mail::fake();
         $user = User::factory()->unverified()->create();
 
-        Event::fake();
+        app(EmailVerificationService::class)->sendCode($user);
 
-        $verificationUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addMinutes(60),
-            ['id' => $user->id, 'hash' => sha1($user->email)]
-        );
+        $code = null;
+        Mail::assertSent(VerificationCodeMail::class, function ($mail) use (&$code, $user) {
+            if ($mail->hasTo($user->email)) { $code = $mail->code; return true; }
+            return false;
+        });
 
-        $response = $this->actingAs($user)->get($verificationUrl);
+        $this->actingAs($user)->post('/verify-email', ['code' => $code]);
 
-        Event::assertDispatched(Verified::class);
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
-        $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
     }
 
-    public function test_email_is_not_verified_with_invalid_hash(): void
+    public function test_email_is_not_verified_with_invalid_code(): void
     {
+        Mail::fake();
         $user = User::factory()->unverified()->create();
+        app(EmailVerificationService::class)->sendCode($user);
 
-        $verificationUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addMinutes(60),
-            ['id' => $user->id, 'hash' => sha1('wrong-email')]
-        );
-
-        $this->actingAs($user)->get($verificationUrl);
+        $this->actingAs($user)->post('/verify-email', ['code' => '111111']);
 
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
     }
