@@ -26,7 +26,7 @@ class SmokeTest extends TestCase
     public function test_user_reaches_dashboard(): void
     {
         $user = User::factory()->create(['role' => 'user']);
-        $this->actingAs($user)->get('/dashboard')->assertOk()->assertSee('Career Readiness');
+        $this->actingAs($user)->get('/dashboard')->assertOk()->assertSee('Aktivitas Karier');
     }
 
     public function test_admin_is_redirected_to_admin_panel(): void
