@@ -34,11 +34,19 @@
                 @endforeach
             </div>
 
-            <button type="submit" :disabled="loading"
-                    class="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:scale-[1.01] disabled:opacity-60">
-                <span x-show="!loading" class="flex items-center gap-2"><x-icon name="play" class="h-4 w-4"/> Mulai Interview</span>
-                <span x-show="loading" x-cloak>HRD sedang masuk ruangan...</span>
-            </button>
+            <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                <button type="submit" name="mode" value="video" :disabled="loading"
+                        class="relative flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:scale-[1.01] disabled:opacity-60">
+                    <span class="absolute right-2 top-1.5 rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide">Baru</span>
+                    <span x-show="!loading" class="flex items-center gap-2"><x-icon name="play" class="h-4 w-4"/> Interview Video AI 🎥</span>
+                    <span x-show="loading" x-cloak>Menyiapkan ruang interview...</span>
+                </button>
+                <button type="submit" name="mode" value="chat" :disabled="loading"
+                        class="flex items-center justify-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-violet-300 hover:bg-slate-50 disabled:opacity-60">
+                    <x-icon name="chat" class="h-4 w-4"/> Mode Chat Biasa
+                </button>
+            </div>
+            <p class="mt-2 text-center text-xs text-slate-400">Mode Video: AI HRD berwujud manusia yang bicara & berekspresi. Butuh izin mikrofon/kamera (opsional).</p>
         </form>
 
         <div class="cl-rise rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" style="--reveal-delay:120ms">

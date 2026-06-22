@@ -83,6 +83,9 @@ Route::middleware(['auth', 'verified', 'role:user'])->group(function () {
     Route::post('/interview/start', [InterviewController::class, 'start'])
         ->middleware('throttle:20,1')->name('interview.start');
     Route::get('/interview/{session}', [InterviewController::class, 'show'])->name('interview.show');
+    Route::get('/interview/{session}/video', [InterviewController::class, 'video'])->name('interview.video');
+    Route::post('/interview/{session}/video/message', [InterviewController::class, 'videoMessage'])
+        ->middleware('throttle:60,1')->name('interview.video.message');
     Route::post('/interview/{session}/message', [InterviewController::class, 'message'])
         ->middleware('throttle:40,1')->name('interview.message');
     Route::post('/interview/{session}/finish', [InterviewController::class, 'finish'])

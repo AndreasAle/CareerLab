@@ -44,6 +44,11 @@ class InterviewController extends Controller
 
         $this->service->openSession($session);
 
+        // Video-conference mode (AI avatar that speaks) vs classic chat.
+        if ($request->input('mode') === 'video') {
+            return redirect()->route('interview.video', $session);
+        }
+
         return redirect()->route('interview.show', $session);
     }
 
@@ -55,6 +60,40 @@ class InterviewController extends Controller
             'session' => $session,
             'messages' => $session->messages()->get(),
             'modes' => InterviewService::HRD_MODES,
+        ]);
+    }
+
+    /** Immersive video-call interview with a talking AI avatar. */
+    public function video(Request $request, InterviewSession $session)
+    {
+        $this->authorizeSession($request, $session);
+
+        return view('interview.video', [
+            'session' => $session,
+            'messages' => $session->messages()->get(),
+            'modes' => InterviewService::HRD_MODES,
+        ]);
+    }
+
+    /** JSON turn endpoint used by the video UI (no page reload). */
+    public function videoMessage(Request $request, InterviewSession $session)
+    {
+        $this->authorizeSession($request, $session);
+
+        if ($session->status === 'completed') {
+            return response()->json(['error' => 'completed', 'message' => 'Interview ini sudah selesai.'], 422);
+        }
+
+        $validated = $request->validate(['message' => ['required', 'string', 'max:4000']]);
+
+        $result = $this->service->answer($session, $validated['message']);
+
+        return response()->json([
+            'answer_score' => $result['user_message']->score,
+            'feedback' => $result['user_message']->feedback,
+            'ai_message' => $result['ai_message']->message,
+            'is_ready_to_finish' => $result['is_ready_to_finish'],
+            'answered' => $session->messages()->where('sender', 'user')->count(),
         ]);
     }
 

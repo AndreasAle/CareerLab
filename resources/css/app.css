@@ -81,3 +81,31 @@
     50%      { border-radius: 58% 42% 38% 62% / 56% 38% 62% 44%; }
 }
 .cl-blob { animation: cl-blob 12s ease-in-out infinite; }
+
+/* ===== AI avatar (video interview) ===== */
+@keyframes cl-blink {
+    0%, 93%, 100% { transform: scaleY(1); }
+    96%           { transform: scaleY(0.08); }
+}
+.cl-eye { transform-origin: center; animation: cl-blink 4.5s infinite; }
+.cl-eye-2 { animation-delay: .05s; }
+
+@keyframes cl-talk {
+    0%, 100% { transform: scaleY(0.45); }
+    50%      { transform: scaleY(1.25); }
+}
+.cl-avatar.speaking .cl-mouth { transform-origin: center; animation: cl-talk .26s ease-in-out infinite; }
+
+@keyframes cl-bob { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-4px) } }
+.cl-avatar.speaking .cl-head { animation: cl-bob 1.6s ease-in-out infinite; }
+
+@keyframes cl-ring-pulse { 0%{ transform: scale(1); opacity:.7 } 100%{ transform: scale(1.25); opacity:0 } }
+.cl-avatar.speaking .cl-pulse { animation: cl-ring-pulse 1.4s ease-out infinite; }
+
+/* sound bars (listening indicator) */
+@keyframes cl-bar { 0%,100%{ height: 25% } 50%{ height: 100% } }
+.cl-soundbar { animation: cl-bar .8s ease-in-out infinite; }
+
+/* subtle "alive" zoom for the realistic avatar photo while speaking */
+@keyframes cl-alive { 0%,100%{ transform: scale(1.0) } 50%{ transform: scale(1.04) } }
+.cl-alive { animation: cl-alive 3.2s ease-in-out infinite; }

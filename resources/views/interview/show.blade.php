@@ -11,10 +11,15 @@
             </div>
         </div>
         @if ($session->status !== 'completed')
-            <form method="POST" action="{{ route('interview.finish', $session) }}" onsubmit="return confirm('Selesaikan interview dan lihat laporan akhir?')">
-                @csrf
-                <button class="rounded-xl bg-gradient-to-r from-emerald-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white">Selesaikan Interview</button>
-            </form>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('interview.video', $session) }}" class="flex items-center gap-1.5 rounded-xl border-2 border-violet-200 bg-violet-50 px-3.5 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-100">
+                    <x-icon name="play" class="h-4 w-4"/> Mode Video 🎥
+                </a>
+                <form method="POST" action="{{ route('interview.finish', $session) }}" onsubmit="return confirm('Selesaikan interview dan lihat laporan akhir?')">
+                    @csrf
+                    <button class="rounded-xl bg-gradient-to-r from-emerald-500 to-blue-500 px-4 py-2 text-sm font-semibold text-white">Selesaikan</button>
+                </form>
+            </div>
         @else
             <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Selesai · Skor {{ $session->final_score }}</span>
         @endif

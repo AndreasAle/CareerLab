@@ -48,4 +48,12 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL') . '/auth/google/callback'),
     ],
 
+    // AI interviewer face for the video interview. Override with your own asset,
+    // or set AI_AVATAR_VIDEO to a looping/real talking-head MP4 (e.g. D-ID/HeyGen export)
+    // for true lifelike lip-sync.
+    'ai_avatar' => [
+        'photo' => env('AI_AVATAR_PHOTO'),
+        'video' => env('AI_AVATAR_VIDEO'),
+    ],
+
 ];
