@@ -1,12 +1,11 @@
 <x-dashboard-layout title="Salary Simulator">
-    <div class="mb-6">
-        <h2 class="text-xl font-bold text-slate-800">Salary Negotiation Simulator</h2>
-        <p class="text-sm text-slate-500">Latihan jawab offering gaji tanpa terlihat pasrah atau terlalu agresif.</p>
-    </div>
+    <x-page-head icon="graph" gradient="from-emerald-500 to-green-600"
+                 title="Salary Negotiation Simulator"
+                 subtitle="Latihan jawab offering gaji tanpa terlihat pasrah atau terlalu agresif." />
 
     <div class="grid gap-6 lg:grid-cols-3">
         <form method="POST" action="{{ route('salary.start') }}" x-data="{ loading: false }" @submit="loading = true"
-              class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+              class="cl-rise lg:col-span-2 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" style="--reveal-delay:60ms">
             @csrf
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -41,7 +40,6 @@
                            class="mt-1 w-full rounded-xl border-slate-300 text-sm focus:border-emerald-500 focus:ring-emerald-500">
                 </div>
             </div>
-
             <div>
                 <label class="block text-sm font-medium text-slate-700">Jawaban Kamu Menghadapi Offering</label>
                 <textarea name="user_answer" rows="4" required placeholder="Tulis bagaimana kamu akan menjawab tawaran gaji tersebut..."
@@ -49,13 +47,13 @@
             </div>
 
             <button type="submit" :disabled="loading"
-                    class="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-blue-500 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60">
-                <span x-show="!loading">Nilai Jawaban Saya</span>
+                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition hover:scale-[1.01] disabled:opacity-60">
+                <span x-show="!loading" class="flex items-center gap-2"><x-icon name="graph" class="h-4 w-4"/> Nilai Jawaban Saya</span>
                 <span x-show="loading" x-cloak>HR menilai jawabanmu...</span>
             </button>
         </form>
 
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="cl-rise rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" style="--reveal-delay:120ms">
             <h3 class="mb-3 font-semibold text-slate-800">Riwayat</h3>
             @forelse ($simulations as $s)
                 <a href="{{ route('salary.show', $s) }}" class="mb-2 block rounded-xl border border-slate-100 p-3 hover:bg-slate-50">
