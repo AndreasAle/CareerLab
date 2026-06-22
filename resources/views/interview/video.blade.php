@@ -275,6 +275,9 @@
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+        import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+        import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
         const mount = document.getElementById('clara3d');
         const loadingEl = document.getElementById('clara3dLoading');
@@ -310,7 +313,18 @@
                 });
             };
 
+            // RPM GLBs are Draco/Meshopt compressed + KTX2 textures — decoders required.
+            const draco = new DRACOLoader();
+            draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+            const ktx2 = new KTX2Loader()
+                .setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/basis/')
+                .detectSupport(renderer);
+
             const loader = new GLTFLoader();
+            loader.setDRACOLoader(draco);
+            loader.setKTX2Loader(ktx2);
+            loader.setMeshoptDecoder(MeshoptDecoder);
+
             loader.load(modelUrl, (gltf) => {
                 const avatar = gltf.scene;
                 avatar.traverse((o) => {
@@ -321,11 +335,20 @@
                     if (o.isMesh && /head/i.test(o.name)) head = o;
                 });
                 scene.add(avatar);
+                avatar.updateMatrixWorld(true);
 
-                // frame head & shoulders
-                avatar.position.y = -1.45;
-                camera.position.set(0, 0.05, 0.95);
-                camera.lookAt(0, 0.02, 0);
+                // auto-frame the head (works for full-body RPM or head-only models)
+                const target = new THREE.Vector3();
+                const box = new THREE.Box3();
+                if (head) { box.setFromObject(head); box.getCenter(target); }
+                else {
+                    box.setFromObject(avatar);
+                    box.getCenter(target);
+                    target.y = box.max.y - (box.max.y - box.min.y) * 0.12; // near the top (head)
+                }
+                const headHeight = head ? (box.max.y - box.min.y) : 0.25;
+                camera.position.set(target.x, target.y + 0.02, target.z + Math.max(0.55, headHeight * 3.2));
+                camera.lookAt(target);
                 smile = expression === 'friendly' ? 0.35 : 0.0;
 
                 resize();
