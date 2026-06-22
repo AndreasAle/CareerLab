@@ -22,8 +22,8 @@ class VerifyCodeController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
-        // First arrival with no code yet -> send one.
-        if ($this->service->sendsUsed($user) === 0) {
+        // First arrival with no code at all -> send one.
+        if (! $this->service->hasCode($user)) {
             $this->service->sendCode($user);
         }
 

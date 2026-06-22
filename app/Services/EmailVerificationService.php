@@ -30,23 +30,31 @@ class EmailVerificationService
 
         $code = (string) random_int(100000, 999999);
 
+        // Persist the code first so verification still works even if delivery is delayed.
         $record->fill([
             'code_hash' => Hash::make($code),
             'expires_at' => now()->addMinutes(self::CODE_TTL_MINUTES),
             'attempts' => 0,
-            'sent_count' => ($record->sent_count ?? 0) + 1,
-            'last_sent_at' => now(),
+            'sent_count' => $record->sent_count ?? 0,
         ])->save();
 
         try {
             Mail::to($user->email)->send(new VerificationCodeMail($user, $code));
+            // Only consume the send quota when delivery actually succeeds.
+            $record->increment('sent_count');
+            $record->forceFill(['last_sent_at' => now()])->save();
         } catch (Throwable $e) {
-            // Never block the flow on mail transport problems; the code is also logged in dev.
+            // Don't burn the quota on transport failure; log the code for dev.
             Log::warning('Verification email failed to send: ' . $e->getMessage());
             Log::info("[DEV] Verification code for {$user->email}: {$code}");
         }
 
         return true;
+    }
+
+    public function hasCode(User $user): bool
+    {
+        return EmailVerificationCode::where('user_id', $user->id)->exists();
     }
 
     /**
