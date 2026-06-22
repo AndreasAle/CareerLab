@@ -31,10 +31,11 @@
 
             {{-- ===== AI interviewer video tile (3D human avatar) ===== --}}
             @php
-                // Free 3D human (Ready Player Me). Create your own at readyplayer.me and set
-                // AI_AVATAR_MODEL to its .glb URL. Must include ARKit + Oculus viseme morph targets.
+                // Free 3D human head with ARKit blendshapes (lip-sync + blink), hosted on
+                // jsDelivr (reliable everywhere). Override with AI_AVATAR_MODEL — e.g. a
+                // Ready Player Me .glb (?morphTargets=ARKit,Oculus Visemes) if reachable.
                 $avatarModel = config('services.ai_avatar.model')
-                    ?: 'https://models.readyplayer.me/64bfa15f0e72c63d7c3934a6.glb?morphTargets=ARKit,Oculus%20Visemes&textureAtlas=1024';
+                    ?: 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/models/gltf/facecap.glb';
                 $avatarPhoto = config('services.ai_avatar.photo') ?: 'https://randomuser.me/api/portraits/women/79.jpg';
                 $expression = in_array($session->hrd_mode, ['galak_mode','strict']) ? 'serious' : 'friendly';
             @endphp
@@ -337,17 +338,19 @@
                 scene.add(avatar);
                 avatar.updateMatrixWorld(true);
 
-                // auto-frame the head (works for full-body RPM or head-only models)
+                // auto-frame: aim at head for full-body avatars, center for head-only models
                 const target = new THREE.Vector3();
-                const box = new THREE.Box3();
-                if (head) { box.setFromObject(head); box.getCenter(target); }
-                else {
-                    box.setFromObject(avatar);
-                    box.getCenter(target);
-                    target.y = box.max.y - (box.max.y - box.min.y) * 0.12; // near the top (head)
+                const box = new THREE.Box3().setFromObject(avatar);
+                const size = box.getSize(new THREE.Vector3());
+                box.getCenter(target);
+                let dist;
+                if (size.y > 1.0) {            // full-body humanoid -> frame the head
+                    target.y = box.max.y - size.y * 0.07;
+                    dist = size.y * 0.45;
+                } else {                        // head-only model (e.g. facecap)
+                    dist = Math.max(size.x, size.y) * 2.0;
                 }
-                const headHeight = head ? (box.max.y - box.min.y) : 0.25;
-                camera.position.set(target.x, target.y + 0.02, target.z + Math.max(0.55, headHeight * 3.2));
+                camera.position.set(target.x, target.y, target.z + dist);
                 camera.lookAt(target);
                 smile = expression === 'friendly' ? 0.35 : 0.0;
 
